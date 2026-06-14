@@ -89,6 +89,47 @@ python src/main.py
 
 浏览器打开 `http://localhost:8000` 进入 Web 仪表盘。
 
+### 7. Docker 部署（可选）
+
+```bash
+# 构建并启动
+docker compose up -d --build
+
+# 查看日志
+docker compose logs -f
+
+# 停止
+docker compose down
+```
+
+**注意事项：**
+
+| 项目 | 说明 |
+|------|------|
+| 数据集 | 不打包进镜像，通过 volume 挂载 `./data/cache:/app/data/cache:ro` |
+| 嵌入模型 | 已打包进镜像（`data/models/`），无需额外下载 |
+| SQLite | `data/basestation.db` 持久化到宿主机，重启不丢失 |
+| KG 索引 | `knowledge_graph/embeddings/` 挂载到宿主机 |
+| API Key | 通过 `.env` 文件传入，不打包进镜像 |
+| 端口 | 默认 `8000`，可通过 `docker-compose.yml` 修改 |
+
+**跨机器移植：**
+
+```bash
+# 源机器导出
+docker save basestation-mas | gzip > basestation-mas.tar.gz
+
+# 目标机器导入
+docker load < basestation-mas.tar.gz
+
+# 单独复制数据集和配置
+scp -r data/cache/ user@target:~/base-station-mas/data/cache/
+scp .env user@target:~/base-station-mas/.env
+
+# 启动
+docker compose up -d
+```
+
 ## Web 仪表盘
 
 启动后可访问交互式诊断面板，提供以下功能：
