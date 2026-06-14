@@ -30,6 +30,9 @@ knowledge_graph/embeddings/
 logs/
 *.log
 
+# Docs (design documents)
+docs/
+
 # OS
 .DS_Store
 Thumbs.db
