@@ -186,6 +186,11 @@ docker compose up -d
 
 ```
 base-station-mas/
+├── Dockerfile            # Docker 镜像构建
+├── docker-compose.yml    # Docker 编排配置
+├── .dockerignore         # Docker 构建排除
+├── docker-entrypoint.sh  # 容器启动脚本
+├── setup_env.sh          # 一键环境初始化
 ├── configs/              # YAML 配置文件
 ├── data/
 │   ├── cache/            # TelecomTS 数据集（需自行下载）
