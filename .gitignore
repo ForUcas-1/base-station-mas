@@ -33,6 +33,9 @@ logs/
 # Docs (design documents)
 docs/
 
+# Downloaded static assets (SVG topology used instead)
+src/web/vis-network.min.js
+
 # OS
 .DS_Store
 Thumbs.db
