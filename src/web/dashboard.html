@@ -257,36 +257,41 @@ function setRootCause(rc){
 }
 
 // ── History ──
+$('history').addEventListener('click',function(e){
+  var t=e.target, hitem=t.closest('.hitem');
+  if(!hitem) return;
+  if(t.classList.contains('hdel')){e.stopPropagation();delHist(t.dataset.rid,e);return}
+  var rpt=hitem.dataset.rpt;
+  if(rpt) openRptWindow(rpt);
+});
 loadHistory();
 
-async function loadHistory(){
-  try{
-    var r=await fetch('/api/history?limit=15');
-    var data=await r.json();
-    var h=$('history'),html='';
-    if(!data||!data.length){h.innerHTML='<div class="hitem"><span class="hts">—</span> 暂无记录</div>';return}
+function loadHistory(){
+  var h=$('history');h.innerHTML='<div class="hitem"><span class="hts">⏳</span> 加载中...</div>';
+  fetch('/api/history?limit=15').then(function(r){return r.json()}).then(function(data){
+    var html='';
+    if(!data||!data.length){h.innerHTML='<div class="hitem"><span class="hts">—</span> 暂无记录 ('+(data?data.length:0)+'条)</div>';return}
     data.forEach(function(d){
       var rc=d.root_cause||'正常',cn=RC_CN[rc]||'';
       var dstr=d.created_at||'';var ts=dstr?new Date(dstr+'Z').toLocaleTimeString('zh-CN',{hour12:false}):'';
-      html+='<div class="hitem">';
-      html+='<span style="float:right;color:var(--rd);cursor:pointer;font-weight:bold" onclick="delHist(\''+d.run_id+'\',event)">✕</span>';
-      html+='<span onclick="showHistRpt(\''+esc(d.report_markdown||'')+'\')" style="display:block">';
+      html+='<div class="hitem" data-rpt="'+esc(d.report_markdown||'')+'">';
+      html+='<span class="hdel" style="float:right;color:var(--rd);font-weight:bold" data-rid="'+d.run_id+'">✕</span>';
       html+='<span class="hts">'+ts+'</span> ';
       html+='<span class="hrc" style="color:'+(d.has_anomaly?'var(--rd)':'var(--gn)')+'">'+(d.has_anomaly?'⚠':'✅')+' '+(cn||rc)+'</span>';
       html+=' <span class="hinfo">'+(d.anomaly_score?((d.anomaly_score*100).toFixed(0)+'%'):'')+' #'+d.sample_index+'</span>';
-      html+='</span></div>';
+      html+='</div>';
     });
     h.innerHTML=html;
-  }catch(e){}
+  }).catch(function(e){h.innerHTML='<div class="hitem"><span class="hts">⚠</span> 加载失败: '+e.message+'</div>'})
 }
-function showHistRpt(rpt){if(rpt)showRpt({preventDefault:function(){}},{target:{getAttribute:function(){return rpt}}})}
-async function delHist(runId,e){e.stopPropagation();if(!confirm('删除此记录？'))return;await fetch('/api/history/'+runId,{method:'DELETE'});loadHistory()}
-
 function connect(){
-  ws=new WebSocket('ws://'+location.host+'/ws');
-  ws.onopen=()=>log('s','🟢 WebSocket 已连接');
-  ws.onmessage=e=>{try{var d=JSON.parse(e.data);onEvent(d)}catch(_){}};
-  ws.onclose=()=>{log('e','🔴 断开，3s后重连...');setTimeout(connect,3000)};
+  var url='ws://'+location.host+'/ws';
+  log('s','⏳ 连接 '+url);
+  try{ws=new WebSocket(url)}catch(e){log('e','WS error: '+e.message);return}
+  ws.onopen=()=>log('s','🟢 已连接');
+  ws.onerror=()=>log('e','❌ WS错误');
+  ws.onmessage=e=>{try{var d=JSON.parse(e.data);onEvent(d)}catch(_){}}
+  ws.onclose=e=>{log('e','🔴 断开('+e.code+')，3s后重连');setTimeout(connect,3000)}
 }
 function send(obj){if(ws&&ws.readyState===1)ws.send(JSON.stringify(obj))}
 function startMon(){send({cmd:'start_monitor',interval_sec:parseInt($('iv').value)})}
@@ -357,7 +362,29 @@ function st(m){
   if(m==='running'){$('st').innerHTML='<span class="dot dg dp"></span> 监测中';$('bs').disabled=false;mode='timed'}
   else{$('st').innerHTML='<span class="dot dr"></span> 空闲';$('bs').disabled=true;mode='idle'}
 }
-function showRpt(e){e.preventDefault();var w=window.open('','_blank','width=700,height=500');w.document.write('<pre style="white-space:pre-wrap;font:13px monospace;padding:16px;background:#0d1117;color:#c9d1d9">'+e.target.getAttribute('data-rpt')+'</pre>')}
+async function delHist(runId){if(!confirm('删除？'))return;await fetch('/api/history/'+runId,{method:'DELETE'});loadHistory()}
+function openRptWindow(md){
+  var b='<!DOCTYPE html><html><head><meta charset=UTF-8><style>';
+  b+='body{background:#0d1117;color:#c9d1d9;font:14px/1.7 system-ui,sans-serif;padding:32px 40px;max-width:800px;margin:0 auto}';
+  b+='h1{font-size:22px;border-bottom:2px solid #30363d;padding-bottom:12px}';
+  b+='h2{font-size:17px;color:#58a6ff;margin-top:28px}';
+  b+='h3{font-size:14px;color:#d2991d;margin-top:20px}';
+  b+='strong{color:#f5f5f7}';
+  b+='table{width:100%;border-collapse:collapse;margin:12px 0}';
+  b+='td,th{border:1px solid #30363d;padding:8px 12px;font-size:13px}';
+  b+='th{background:#161b22;color:#8b949e;font-weight:600}';
+  b+='code{background:#161b22;padding:2px 6px;border-radius:3px;font-size:12px;color:#d2a8ff}';
+  b+='hr{border:none;border-top:1px solid #30363d;margin:24px 0}';
+  b+='blockquote{border-left:3px solid #58a6ff;margin:12px 0;padding:4px 16px;color:#8b949e;background:rgba(88,166,255,.04)}';
+  b+='</style></head><body>';
+  var h=md.replace(/^### (.+)/gm,'<h3>$1</h3>').replace(/^## (.+)/gm,'<h2>$1</h2>').replace(/^# (.+)/gm,'<h1>$1</h1>');
+  h=h.replace(/^---+/gm,'<hr>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>');
+  h=h.replace(/^> (.+)/gm,'<blockquote>$1</blockquote>').replace(/\n\n/g,'<br><br>');
+  b+=h+'</body></html>';
+  var w=window.open('','_blank','width=750,height=600');w.document.write(b);
+}
+
+function showRpt(e){e.preventDefault();openRptWindow(e.target.getAttribute("data-rpt")||"")}
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 connect();
 </script>

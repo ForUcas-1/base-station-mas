@@ -15,9 +15,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Pre-download embedding model (~80MB, cached in image)
-RUN python scripts/download_models.py
-
 EXPOSE 8000
 
 # Entrypoint: build KG index (needs dataset), then start server

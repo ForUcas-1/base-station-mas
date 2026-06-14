@@ -85,6 +85,7 @@ class DiagnosisWorker(BaseWorker):
         self.graphrag = GraphRAGQuery(
             kg_path=step2_cfg.get("kg_path", "knowledge_graph/topology.json"),
             embeddings_dir=step2_cfg.get("embeddings_dir", "knowledge_graph/embeddings"),
+            model_cache_dir="data/models",
         )
 
         # Step 3: LLM (lazy init to avoid import if not used)

@@ -14,7 +14,6 @@ services:
     volumes:
       # TelecomTS dataset (required)
       - ./data/cache:/app/data/cache:ro
-      # Generated files (KG embeddings, SQLite DB, model cache)
+      # Generated files (KG embeddings, SQLite DB)
       - ./data/basestation.db:/app/data/basestation.db
       - ./knowledge_graph/embeddings:/app/knowledge_graph/embeddings
-      - ./data/models:/app/data/models
