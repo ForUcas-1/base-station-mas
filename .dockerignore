@@ -1,0 +1,34 @@
+# Python virtualenv
+venv/
+.venv/
+
+# Dataset cache (mounted at runtime)
+data/cache/
+data/basestation.db
+
+# Generated embeddings
+knowledge_graph/embeddings/
+
+# Environment with keys
+.env
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# Downloaded JS lib (unused)
+src/web/vis-network.min.js
+
+# Docs
+docs/
+
+# Checkpoints
+data/checkpoints/
+
+# Logs
+logs/
+*.log

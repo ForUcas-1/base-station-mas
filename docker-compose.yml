@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  basestation-mas:
+    build: .
+    container_name: basestation-mas
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - HF_ENDPOINT=https://hf-mirror.com
+    volumes:
+      # TelecomTS dataset (required)
+      - ./data/cache:/app/data/cache:ro
+      # Generated files (KG embeddings, SQLite DB, model cache)
+      - ./data/basestation.db:/app/data/basestation.db
+      - ./knowledge_graph/embeddings:/app/knowledge_graph/embeddings
+      - ./data/models:/app/data/models
