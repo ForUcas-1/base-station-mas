@@ -100,8 +100,4 @@ TelecomTS (ICLR 2026)：32,000 时序样本，18 通道 KPI × 128 时间步，1
 pytest tests/ -v
 ```
 
-## 文档
 
-- [PRD](docs/PRD.md) — 产品需求文档
-- [ADR-3](docs/ADR-3.md) — 架构决策记录
-- [Architecture](docs/Architecture.md) — 系统架构文档
