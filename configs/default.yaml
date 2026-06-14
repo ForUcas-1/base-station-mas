@@ -1,0 +1,17 @@
+# BaseStation-MAS 总配置
+# 各 Worker 的详细参数见独立配置文件
+
+orchestrator:
+  max_eval_retries: 2
+  default_timeout_sec: 30
+  telemetry:
+    log_level: INFO
+    collect_latency_metrics: true
+
+llm:
+  temperature: 0.1
+  max_tokens: 1024
+
+api:
+  host: ${API_HOST:-0.0.0.0}
+  port: ${API_PORT:-8000}

@@ -1,0 +1,20 @@
+# Reporter Worker — LLM 诊断报告生成
+
+reporter:
+  llm:
+    temperature: 0.4
+    max_tokens: 3072
+
+  report_style:
+    template: markdown
+    sections:
+      - summary
+      - anomaly_detection
+      - root_cause_analysis
+      - evidence_chain
+      - duration_impact
+      - recommendations
+
+  few_shot:
+    enabled: true
+    num_examples: 3

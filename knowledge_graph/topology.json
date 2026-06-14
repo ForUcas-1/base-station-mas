@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0",
+  "description": "5G Base Station Network Topology for GraphRAG",
+  "nodes": [
+    {
+      "id": "BS_001",
+      "type": "BaseStation",
+      "label": "gNB Main Base Station",
+      "attributes": {
+        "frequency_band": "n78",
+        "tx_power_dbm": 43,
+        "kpi_channels": [
+          "RSRP",
+          "DL_BLER",
+          "DL_MCS",
+          "UL_BLER",
+          "UL_MCS",
+          "UL_NPRB",
+          "UL_SNR",
+          "TX_Bytes",
+          "RX_Bytes",
+          "Estimated_UL_Buffer",
+          "PRBs_DL_Current",
+          "PRBs_UL_Current",
+          "PRB_Utilization_DL",
+          "PRB_Utilization_UL",
+          "UL_NumberOfPackets",
+          "DL_NumberOfPackets",
+          "UL_Protocol",
+          "DL_Protocol"
+        ],
+        "description_embedding_id": "bs_001_desc"
+      }
+    },
+    {
+      "id": "JAM_001",
+      "type": "Jammer",
+      "label": "Broadband Jammer",
+      "attributes": {
+        "active": false,
+        "type": "broadband_noise",
+        "affected_zones": [
+          "Zone_B"
+        ],
+        "impact": "wideband_SNR_degradation",
+        "description_embedding_id": "jam_001_desc",
+        "jamming_samples": 0
+      }
+    },
+    {
+      "id": "ZA_001",
+      "type": "Zone_A",
+      "label": "Normal Coverage Zone (0-3m)",
+      "attributes": {
+        "zone": "A",
+        "range_meters": "0-3",
+        "signal_strength": "normal",
+        "typical_rsrp_range": [
+          -85,
+          -75
+        ],
+        "interference_affected": false,
+        "description_embedding_id": "za_001_desc",
+        "sample_count": 500
+      }
+    },
+    {
+      "id": "ZB_001",
+      "type": "Zone_B",
+      "label": "Interference Zone (3-6m)",
+      "attributes": {
+        "zone": "B",
+        "range_meters": "3-6",
+        "signal_strength": "degraded",
+        "typical_rsrp_range": [
+          -105,
+          -85
+        ],
+        "interference_affected": true,
+        "typical_symptoms": [
+          "RSRP_drop",
+          "BLER_burst",
+          "UL_MCS_degradation"
+        ],
+        "description_embedding_id": "zb_001_desc"
+      }
+    },
+    {
+      "id": "ZC_001",
+      "type": "Zone_C",
+      "label": "Mobility Zone (>6m)",
+      "attributes": {
+        "zone": "C",
+        "range_meters": "6+",
+        "signal_strength": "weak",
+        "typical_rsrp_range": [
+          -120,
+          -105
+        ],
+        "handover_frequent": true,
+        "description_embedding_id": "zc_001_desc"
+      }
+    },
+    {
+      "id": "MOB_001",
+      "type": "Mobile",
+      "label": "UE Instance 1 (streaming)",
+      "attributes": {
+        "application": "YouTube",
+        "mobility": true,
+        "current_zone": "Zone_A",
+        "description_embedding_id": "mob_001_desc"
+      }
+    },
+    {
+      "id": "MOB_002",
+      "type": "Mobile",
+      "label": "UE Instance 2 (file transfer)",
+      "attributes": {
+        "application": "File Transfer",
+        "mobility": false,
+        "current_zone": "Zone_B",
+        "description_embedding_id": "mob_002_desc"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "E_001",
+      "source": "JAM_001",
+      "target": "BS_001",
+      "type": "interference",
+      "attributes": {
+        "description": "Broadband noise interference from external jammer",
+        "impact": "wideband_SNR_degradation",
+        "severity": "high"
+      }
+    },
+    {
+      "id": "E_002",
+      "source": "BS_001",
+      "target": "ZA_001",
+      "type": "covers",
+      "attributes": {
+        "signal_strength": "strong",
+        "interference_affected": false
+      }
+    },
+    {
+      "id": "E_003",
+      "source": "BS_001",
+      "target": "ZB_001",
+      "type": "covers",
+      "attributes": {
+        "signal_strength": "moderate",
+        "interference_affected": true
+      }
+    },
+    {
+      "id": "E_004",
+      "source": "BS_001",
+      "target": "ZC_001",
+      "type": "covers",
+      "attributes": {
+        "signal_strength": "weak",
+        "interference_affected": false
+      }
+    },
+    {
+      "id": "E_005",
+      "source": "MOB_001",
+      "target": "ZA_001",
+      "type": "located_in"
+    },
+    {
+      "id": "E_006",
+      "source": "MOB_002",
+      "target": "ZB_001",
+      "type": "located_in"
+    },
+    {
+      "id": "E_007",
+      "source": "MOB_001",
+      "target": "ZB_001",
+      "type": "moves_to",
+      "attributes": {
+        "triggers": "mobility_event",
+        "handover_delay_increased": true
+      }
+    },
+    {
+      "id": "E_008",
+      "source": "ZA_001",
+      "target": "ZB_001",
+      "type": "adjacent"
+    },
+    {
+      "id": "E_009",
+      "source": "ZB_001",
+      "target": "ZC_001",
+      "type": "adjacent"
+    }
+  ]
+}

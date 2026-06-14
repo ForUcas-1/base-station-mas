@@ -1,0 +1,15 @@
+# Evaluator Worker — LLM 质检
+
+evaluator:
+  llm:
+    temperature: 0.0
+    max_tokens: 1024
+
+  checks:
+    format_valid: true
+    fact_consistency: true
+    hallucination_check: true
+    suggestion_quality: true
+    kpi_coverage: true
+
+  max_retries: 2

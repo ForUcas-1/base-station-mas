@@ -1,0 +1,23 @@
+# GraphRAG — 知识图谱构建配置
+
+graphrag:
+  topology:
+    path: knowledge_graph/topology.json
+
+  embedding:
+    model: all-MiniLM-L6-v2
+    batch_size: 256
+    device: cpu
+
+  vector_store:
+    type: faiss
+    faiss:
+      index_type: IndexFlatIP
+      output_dir: ${KG_EMBEDDINGS_DIR:-knowledge_graph/embeddings}
+
+  construction:
+    include_description: true
+    include_troubleshooting: true
+    include_statistics: true
+    include_labels: true
+    max_samples: 32000

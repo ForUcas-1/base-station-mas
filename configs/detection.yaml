@@ -1,0 +1,20 @@
+# Detection Worker — 纯 ML 异常检测
+
+detection:
+  encoder_type: ${DETECTION_ENCODER:-TimesNet}
+  use_ground_truth: true        # true=读数据集标签, false=ML模型推理（需checkpoint）
+  encoder_config:
+    seq_len: 128
+    pred_len: 0
+    top_k: 3
+    enc_in: 18
+    d_model: 32
+    d_ff: 64
+    num_kernels: 4
+    embed: fixed
+    freq: "0.1s"
+    dropout: 0.3
+    e_layers: 2
+  anomaly_threshold: ${DETECTION_THRESHOLD:-0.5}
+  checkpoint_path: data/checkpoints/${DETECTION_CHECKPOINT:-detection_timesnet.pt}
+  device: cpu

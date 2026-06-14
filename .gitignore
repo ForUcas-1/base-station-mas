@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+venv/
+.venv/
+*.egg-info/
+dist/
+
+# Environment
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Model checkpoints
+data/checkpoints/*.pt
+
+# HuggingFace cache (large binary)
+data/cache/
+
+# Knowledge graph generated files
+knowledge_graph/embeddings/
+*.faiss
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
