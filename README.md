@@ -108,13 +108,6 @@ DETECTION_ENCODER=TimesNet          # 8 选 1
 DIAGNOSIS_ENCODER=TimesNet          # 8 选 1
 ```
 
-**当前预训练模型（已打包）：**
-
-| 模型 | 任务 | 编码器 | 测试集准确率 |
-|------|------|--------|:--:|
-| `detection_timesnet.pt` | 异常检测（二分类） | TimesNet | 96.9% |
-| `rootcause_timesnet.pt` | 根因分类（10 类） | TimesNet | 64.1% |
-
 > 根因分类 10 类（不含 Jamming）。Jamming 通过 GraphRAG + LLM 补充识别。
 > ML 推理模式下，[异常]/[正常] 按钮会自动用模型验证候选样本，确保选到模型能正确识别的样本。
 
