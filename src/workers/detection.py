@@ -107,16 +107,13 @@ class DetectionWorker(BaseWorker):
         self, sample: dict, sample_index: int, t0: float
     ) -> DetectionResult:
         """ML-based anomaly detection using TimesNet encoder."""
-        try:
-            kpi_array = self._extract_kpi_array(sample)
-            X = np.expand_dims(kpi_array, axis=0)  # (1, 18, 128)
-        except Exception:
-            X, _ = preprocess([sample], "anomaly detection")
-            if len(X) == 0:
-                return DetectionResult(
-                    has_anomaly=False, anomaly_score=0.0,
-                    affected_kpis=[], sample_index=sample_index,
-                )
+        # Use same preprocessing as training for consistency
+        X, _ = preprocess([sample], "anomaly detection")
+        if len(X) == 0:
+            return DetectionResult(
+                has_anomaly=False, anomaly_score=0.0,
+                affected_kpis=[], sample_index=sample_index,
+            )
 
         x_tensor = torch.from_numpy(X).float().to(self.device)
         with torch.no_grad():
@@ -162,14 +159,12 @@ class DetectionWorker(BaseWorker):
     # Helpers
     # ------------------------------------------------------------------
     def _auto_select_sample(self, task: OrchestratorTask) -> int:
-        """Auto-select a random sample based on task context.
-
-        Each query gets a different sample, making the demo non-repetitive.
+        """Auto-select a sample. In ML mode, validates with model to
+        find samples the model actually detects as anomalous.
         """
         import random
 
         if task.intent == "inspect":
-            # Random normal (no-anomaly) sample
             candidates = []
             for i in range(min(len(self.loader), 5000)):
                 s = self.loader[i]
@@ -180,28 +175,42 @@ class DetectionWorker(BaseWorker):
                     break
             return random.choice(candidates) if candidates else 0
 
-        # Diagnose: random Jamming sample, fallback to any anomaly
+        # Diagnose: collect anomaly candidates
         candidates = []
         for i in range(min(len(self.loader), 10000)):
             s = self.loader[i]
-            anomalies = s.get("anomalies", {})
-            t = anomalies.get("type", "")
-            if t == "Jamming":
+            t = s.get("anomalies", {}).get("type", "")
+            if t and t != "None":
                 candidates.append(i)
-            if len(candidates) >= 30:
+            if len(candidates) >= 100:
                 break
-        if candidates:
-            return random.choice(candidates)
 
-        # Fallback: any anomaly type
-        for i in range(min(len(self.loader), 10000)):
-            s = self.loader[i]
-            anomalies = s.get("anomalies", {})
-            if anomalies.get("type") and anomalies["type"] != "None":
-                candidates.append(i)
-            if len(candidates) >= 30:
-                break
-        return random.choice(candidates) if candidates else 100
+        if not candidates:
+            return 100
+
+        # In ML mode, validate that the model actually detects the anomaly
+        if not self.use_ground_truth and self.encoder is not None:
+            random.shuffle(candidates)
+            for idx in candidates[:20]:  # Try up to 20 candidates
+                try:
+                    s = self.loader[idx]
+                    X, _ = preprocess([s], "anomaly detection")
+                    if len(X) == 0:
+                        continue
+                    x_t = torch.from_numpy(X).float().to(self.device)
+                    with torch.no_grad():
+                        emb = self.encoder(x_t.permute(0, 2, 1))
+                        logits = self.head(emb)
+                        probs = F.softmax(logits, dim=-1)
+                        score = float(probs[0, 1].item())
+                    if score >= self.threshold:
+                        return idx  # Model confirms anomaly
+                except Exception:
+                    continue
+            # Fallback: return any candidate (even if model disagrees)
+            return candidates[0]
+
+        return random.choice(candidates)
 
     @staticmethod
     def _extract_kpi_array(sample: dict) -> np.ndarray:

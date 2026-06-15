@@ -376,16 +376,23 @@ Respond as a JSON object with:
     def _preprocess_with_jamming(sample: dict) -> tuple:
         """Preprocess a sample for root-cause analysis WITHOUT filtering Jamming.
 
-        The original data_utils.preprocess() filters out Jamming with:
-          if item["anomalies"]["type"] == "Jamming": continue
-        This override ensures Jamming is included as a valid class.
+        Uses the same pipeline as training: anomaly detection filtering (all samples)
+        + per-channel Z-score normalization (matching root-cause training).
         """
         try:
-            # Use anomaly detection preprocessing (includes all samples)
-            # then pair with root-cause labels
             from src.data_utils import preprocess, anomaly_type_2_id
+            import numpy as np
 
-            X, _ = preprocess([sample], "anomaly detection")
+            # Use anomaly detection preprocessing (includes ALL samples, no filtering)
+            X_raw, _ = preprocess([sample], "anomaly detection")
+
+            if len(X_raw) == 0:
+                return None, None
+
+            # Apply per-channel Z-score normalization (matching root-cause training)
+            mean = X_raw.mean(axis=2, keepdims=True)
+            std = X_raw.std(axis=2, keepdims=True).clip(min=1e-8)
+            X = (X_raw - mean) / std
 
             anomalies = sample.get("anomalies", {})
             anomaly_type = anomalies.get("type", "")

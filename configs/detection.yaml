@@ -2,7 +2,7 @@
 
 detection:
   encoder_type: ${DETECTION_ENCODER:-TimesNet}
-  use_ground_truth: true        # true=读数据集标签, false=ML模型推理（需checkpoint）
+  use_ground_truth: false       # true=读数据集标签, false=ML模型推理（需checkpoint）
   encoder_config:
     seq_len: 128
     pred_len: 0

@@ -42,7 +42,7 @@ def build_head(
         return nn.Sequential(
             nn.LayerNorm(d_model),
             nn.Dropout(dropout),
-            nn.Linear(d_model, 11),  # 11 classes (includes Jamming!)
+            nn.Linear(d_model, 10),  # 10 classes (checkpoint trained without Jamming)
         )
 
     elif task_type == "anomaly duration":

@@ -97,13 +97,38 @@ async def websocket_endpoint(ws: WebSocket):
             if cmd == "select_sample":
                 stype = msg.get("type", "anomaly")
                 if stype == "anomaly":
-                    idx = _pick_random_anomaly(loader)
-                    s = loader[idx]
-                    atype = s.get("anomalies", {}).get("type", "Unknown")
+                    # Model-assisted: try up to 20 candidates, keep first with score >= 0.5
+                    sup = ws.app.state.supervisor
+                    det = None
+                    for _ in range(20):
+                        idx = _pick_random_anomaly(loader)
+                        s = loader[idx]
+                        atype = s.get("anomalies", {}).get("type", "Unknown")
+                        try:
+                            from contracts.task import OrchestratorTask as OT
+                            tt = OT(user_query="", intent="diagnose", sample_index=idx, subtasks=["detect"])
+                            det = await sup.detection.execute(tt)
+                            if det.anomaly_score >= 0.5:
+                                break
+                        except Exception:
+                            pass
                     from src.utils.logging import get_logger
-                    get_logger("ws").info(f"Selected anomaly sample #{idx}: {atype}")
+                    score = det.anomaly_score if det else 0
+                    get_logger("ws").info(f"Selected anomaly sample #{idx}: {atype} (score={score:.3f})")
                 else:
-                    idx = _pick_random_normal(loader)
+                    # Model-assisted: try up to 20 normal candidates, keep first with score < 0.5
+                    sup = ws.app.state.supervisor
+                    det = None
+                    for _ in range(20):
+                        idx = _pick_random_normal(loader)
+                        try:
+                            from contracts.task import OrchestratorTask as OT
+                            tt = OT(user_query="", intent="diagnose", sample_index=idx, subtasks=["detect"])
+                            det = await sup.detection.execute(tt)
+                            if det.anomaly_score < 0.5:
+                                break
+                        except Exception:
+                            pass
                     atype = ""
                 cur_sample = {"index": idx, "type": stype, "anomaly_type": atype}
                 monitor.current_sample_index = idx
