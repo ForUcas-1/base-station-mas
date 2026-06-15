@@ -71,7 +71,54 @@ LLM_MODEL=deepseek-v4-pro       # 模型名
 DEEPSEEK_API_KEY=sk-xxx         # API Key
 ```
 
-### 5. 构建知识图谱及模型
+### 5. 模型训练（TelecomTS 项目）
+
+本项目复用 TelecomTS 的 8 个编码器，运行模式分两种：
+
+| 模式 | 配置 | 说明 |
+|------|------|------|
+| **Ground Truth** | `use_ground_truth: true` | 直接读取数据集标签，免训练开箱即用 |
+| **ML 推理** | `use_ground_truth: false` | 加载预训练 checkpoint，真实模型推理 |
+
+**ML 推理需要先训练模型：**
+
+```bash
+cd /root/projects/TelecomTS
+export HF_ENDPOINT=https://hf-mirror.com
+
+# ── 训练异常检测（Detection Worker）──
+# 编辑 configs/config.yaml:
+#   task_type: "anomaly detection"
+#   encoder_type: "TimesNet"
+python src/run.py
+cp checkpoints/*.pt ../base-station-mas/data/checkpoints/detection_timesnet.pt
+
+# ── 训练根因分类（Diagnosis Step 1）──
+# 编辑 configs/config.yaml:
+#   task_type: "root-cause analysis"
+#   encoder_type: "TimesNet"
+python src/run.py
+cp checkpoints/*.pt ../base-station-mas/data/checkpoints/rootcause_timesnet.pt
+```
+
+**模型配置通过 `.env` 切换：**
+
+```bash
+DETECTION_ENCODER=TimesNet          # 8 选 1
+DIAGNOSIS_ENCODER=TimesNet          # 8 选 1
+```
+
+**当前预训练模型（已打包）：**
+
+| 模型 | 任务 | 编码器 | 测试集准确率 |
+|------|------|--------|:--:|
+| `detection_timesnet.pt` | 异常检测（二分类） | TimesNet | 96.9% |
+| `rootcause_timesnet.pt` | 根因分类（10 类） | TimesNet | 64.1% |
+
+> 根因分类 10 类（不含 Jamming）。Jamming 通过 GraphRAG + LLM 补充识别。
+> ML 推理模式下，[异常]/[正常] 按钮会自动用模型验证候选样本，确保选到模型能正确识别的样本。
+
+### 6. 构建知识图谱
 
 ```bash
 # 预下载嵌入模型（一次性）
@@ -81,7 +128,7 @@ python scripts/download_models.py
 python knowledge_graph/build_graph.py
 ```
 
-### 6. 启动服务
+### 7. 启动服务
 
 ```bash
 python src/main.py
@@ -89,7 +136,7 @@ python src/main.py
 
 浏览器打开 `http://localhost:8000` 进入 Web 仪表盘。
 
-### 7. Docker 部署（可选）
+### 8. Docker 部署（可选）
 
 ```bash
 # 构建并启动
